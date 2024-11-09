@@ -1,0 +1,18 @@
+# Specify the minimum CMake version
+cmake_minimum_required(VERSION 3.10)
+
+# Set the project name
+project(OpenCVExample)
+
+# Find the OpenCV package
+set(OpenCV_DIR C:/Users/ke_20/Downloads/opencv/build)
+find_package(OpenCV REQUIRED)
+
+# Include OpenCV headers
+include_directories(${OpenCV_INCLUDE_DIRS})
+
+# Add the executable
+add_executable(OpenCVExample main.cpp)
+
+# Link the OpenCV libraries
+target_link_libraries(OpenCVExample ${OpenCV_LIBS})
