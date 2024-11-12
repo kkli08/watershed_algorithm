@@ -28,3 +28,6 @@ Time taken for watershed: 0.00601303 seconds.
 Time taken to generate result image: 0.00123459 seconds.
 Total time taken: 0.0494591 seconds.
 ```
+
+### Usage
+`like23@ug58.eecg.toronto.edu`
