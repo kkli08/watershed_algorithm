@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.10)
 project(OpenCVExample)
 
 # Find the OpenCV package
-set(OpenCV_DIR C:/Users/ke_20/Downloads/opencv/build)
+set(OpenCV_DIR "/nfs/ug/homes-5/l/like23/ECE_1747/opencv/build")
 find_package(OpenCV REQUIRED)
 
 # Include OpenCV headers

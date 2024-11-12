@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
     cout << "Time taken to load image: " << t1_elapsed << " seconds." << endl;
 
     // Show the source image
-    imshow("Source Image", src);
+    // imshow("Source Image", src);
     //! [load_image]
 
     //! [black_bg]
@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
     cout << "Time taken to change background: " << t2_elapsed << " seconds." << endl;
 
     // Show output image
-    imshow("Black Background Image", src);
+    // imshow("Black Background Image", src);
     //! [black_bg]
 
     //! [sharp]
@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
     cout << "Time taken to sharpen image: " << t3_elapsed << " seconds." << endl;
 
     // imshow( "Laplace Filtered Image", imgLaplacian );
-    imshow("New Sharpened Image", imgResult);
+    // imshow("New Sharpened Image", imgResult);
     //! [sharp]
 
     //! [bin]
@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
     double t4_elapsed = ((double)getTickCount() - t4) / getTickFrequency();
     cout << "Time taken to create binary image: " << t4_elapsed << " seconds." << endl;
 
-    imshow("Binary Image", bw);
+    // imshow("Binary Image", bw);
     //! [bin]
 
     //! [dist]
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
     double t5_elapsed = ((double)getTickCount() - t5) / getTickFrequency();
     cout << "Time taken for distance transform: " << t5_elapsed << " seconds." << endl;
 
-    imshow("Distance Transform Image", dist);
+    // imshow("Distance Transform Image", dist);
     //! [dist]
 
     //! [peaks]
@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
     double t6_elapsed = ((double)getTickCount() - t6) / getTickFrequency();
     cout << "Time taken to obtain peaks: " << t6_elapsed << " seconds." << endl;
 
-    imshow("Peaks", dist);
+    // imshow("Peaks", dist);
     //! [peaks]
 
     //! [seeds]
@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
     double t7_elapsed = ((double)getTickCount() - t7) / getTickFrequency();
     cout << "Time taken to create markers: " << t7_elapsed << " seconds." << endl;
 
-    imshow("Markers", markers8u);
+    // imshow("Markers", markers8u);
     //! [seeds]
 
     //! [watershed]
@@ -211,7 +211,7 @@ int main(int argc, char* argv[])
     cout << "Time taken to generate result image: " << t9_elapsed << " seconds." << endl;
 
     // Visualize the final image
-    imshow("Final Result", dst);
+    // imshow("Final Result", dst);
     //! [watershed]
 
     double total_elapsed = ((double)getTickCount() - total_start) / getTickFrequency();
