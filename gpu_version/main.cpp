@@ -1,11 +1,15 @@
 /**
- * @brief Sample code showing how to segment overlapping objects using Laplacian filtering, in addition to Watershed and Distance Transformation
- * @author OpenCV Team
+ * @brief Sample code showing how to segment overlapping objects using Laplacian filtering, with CUDA acceleration where possible
  */
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
+// Include CUDA headers
+#include <opencv2/cudaarithm.hpp>
+#include <opencv2/cudafilters.hpp>
+#include <opencv2/cudaimgproc.hpp>
+
 #include <iostream>
 
 using namespace std;
@@ -15,8 +19,7 @@ int main(int argc, char* argv[])
 {
     double total_start = (double)getTickCount();
 
-    //! [load_image]
-    // Load the image
+    // Load the image on CPU
     double t1 = (double)getTickCount();
 
     CommandLineParser parser(argc, argv, "{@input | cards.png | input image}");
@@ -31,73 +34,83 @@ int main(int argc, char* argv[])
     double t1_elapsed = ((double)getTickCount() - t1) / getTickFrequency();
     cout << "Time taken to load image: " << t1_elapsed << " seconds." << endl;
 
-    // Show the source image
-    // imshow("Source Image", src);
-    //! [load_image]
+    // Upload image to GPU
+    double t_upload = (double)getTickCount();
 
-    //! [black_bg]
-    // Change the background from white to black
+    cv::cuda::GpuMat d_src;
+    d_src.upload(src);
+
+    double t_upload_elapsed = ((double)getTickCount() - t_upload) / getTickFrequency();
+    cout << "Time taken to upload image to GPU: " << t_upload_elapsed << " seconds." << endl;
+
+    // Change the background from white to black using CUDA
     double t2 = (double)getTickCount();
 
-    Mat mask;
-    inRange(src, Scalar(255, 255, 255), Scalar(255, 255, 255), mask);
-    src.setTo(Scalar(0, 0, 0), mask);
+    cv::cuda::GpuMat d_mask;
+    cv::cuda::inRange(d_src, Scalar(255, 255, 255), Scalar(255, 255, 255), d_mask);
+    d_src.setTo(Scalar(0, 0, 0), d_mask);
 
     double t2_elapsed = ((double)getTickCount() - t2) / getTickFrequency();
     cout << "Time taken to change background: " << t2_elapsed << " seconds." << endl;
 
-    // Show output image
-    // imshow("Black Background Image", src);
-    //! [black_bg]
-
-    //! [sharp]
-    // Sharpen the image
+    // Sharpen the image using CUDA
     double t3 = (double)getTickCount();
 
-    // Create a kernel that we will use to sharpen our image
+    // Create a kernel for sharpening
     Mat kernel = (Mat_<float>(3, 3) <<
         1, 1, 1,
         1, -8, 1,
         1, 1, 1); // an approximation of second derivative, a quite strong kernel
 
-    // do the laplacian filtering as it is
-    // well, we need to convert everything in something more deeper then CV_8U
-    // because the kernel has some negative values,
-    // and we can expect in general to have a Laplacian image with negative values
-    // BUT a 8bits unsigned int (the one we are working with) can contain values from 0 to 255
-    // so the possible negative number will be truncated
-    Mat imgLaplacian;
-    filter2D(src, imgLaplacian, CV_32F, kernel);
-    Mat sharp;
-    src.convertTo(sharp, CV_32F);
-    Mat imgResult = sharp - imgLaplacian;
+    // Convert d_src to BGRA (4 channels)
+    cv::cuda::GpuMat d_src_rgba;
+    cv::cuda::cvtColor(d_src, d_src_rgba, COLOR_BGR2BGRA);
 
-    // convert back to 8bits gray scale
-    imgResult.convertTo(imgResult, CV_8UC3);
-    imgLaplacian.convertTo(imgLaplacian, CV_8UC3);
+    // Convert to float
+    cv::cuda::GpuMat d_src_rgba_float;
+    d_src_rgba.convertTo(d_src_rgba_float, CV_32F);
+
+    // Create filter
+    cv::Ptr<cv::cuda::Filter> filter = cv::cuda::createLinearFilter(d_src_rgba_float.type(), d_src_rgba_float.type(), kernel);
+
+    // Apply the filter
+    cv::cuda::GpuMat d_imgLaplacian;
+    filter->apply(d_src_rgba_float, d_imgLaplacian);
+
+    // Subtract Laplacian from the original image
+    cv::cuda::GpuMat d_imgResult;
+    cv::cuda::subtract(d_src_rgba_float, d_imgLaplacian, d_imgResult);
+
+    // Convert back to 8-bit
+    d_imgResult.convertTo(d_imgResult, CV_8UC4);
+
+    // Convert back to BGR (3 channels)
+    cv::cuda::GpuMat d_imgResult_bgr;
+    cv::cuda::cvtColor(d_imgResult, d_imgResult_bgr, COLOR_BGRA2BGR);
 
     double t3_elapsed = ((double)getTickCount() - t3) / getTickFrequency();
     cout << "Time taken to sharpen image: " << t3_elapsed << " seconds." << endl;
 
-    // imshow( "Laplace Filtered Image", imgLaplacian );
-    // imshow("New Sharpened Image", imgResult);
-    //! [sharp]
+    // Download the result back to CPU for further processing
+    double t_download = (double)getTickCount();
 
-    //! [bin]
+    Mat imgResult;
+    d_imgResult_bgr.download(imgResult);
+
+    double t_download_elapsed = ((double)getTickCount() - t_download) / getTickFrequency();
+    cout << "Time taken to download image from GPU: " << t_download_elapsed << " seconds." << endl;
+
+    // Continue processing on CPU
     // Create binary image from source image
     double t4 = (double)getTickCount();
 
     Mat bw;
     cvtColor(imgResult, bw, COLOR_BGR2GRAY);
-    threshold(bw, bw, 40, 255, THRESH_BINARY | THRESH_OTSU);
+    threshold(bw, bw, 0, 255, THRESH_BINARY | THRESH_OTSU);
 
     double t4_elapsed = ((double)getTickCount() - t4) / getTickFrequency();
     cout << "Time taken to create binary image: " << t4_elapsed << " seconds." << endl;
 
-    // imshow("Binary Image", bw);
-    //! [bin]
-
-    //! [dist]
     // Perform the distance transform algorithm
     double t5 = (double)getTickCount();
 
@@ -105,18 +118,12 @@ int main(int argc, char* argv[])
     distanceTransform(bw, dist, DIST_L2, 3);
 
     // Normalize the distance image for range = {0.0, 1.0}
-    // so we can visualize and threshold it
     normalize(dist, dist, 0, 1.0, NORM_MINMAX);
 
     double t5_elapsed = ((double)getTickCount() - t5) / getTickFrequency();
     cout << "Time taken for distance transform: " << t5_elapsed << " seconds." << endl;
 
-    // imshow("Distance Transform Image", dist);
-    //! [dist]
-
-    //! [peaks]
     // Threshold to obtain the peaks
-    // This will be the markers for the foreground objects
     double t6 = (double)getTickCount();
 
     threshold(dist, dist, 0.4, 1.0, THRESH_BINARY);
@@ -128,12 +135,7 @@ int main(int argc, char* argv[])
     double t6_elapsed = ((double)getTickCount() - t6) / getTickFrequency();
     cout << "Time taken to obtain peaks: " << t6_elapsed << " seconds." << endl;
 
-    // imshow("Peaks", dist);
-    //! [peaks]
-
-    //! [seeds]
-    // Create the CV_8U version of the distance image
-    // It is needed for findContours()
+    // Create markers for watershed
     double t7 = (double)getTickCount();
 
     Mat dist_8u;
@@ -154,17 +156,11 @@ int main(int argc, char* argv[])
 
     // Draw the background marker
     circle(markers, Point(5, 5), 3, Scalar(255), -1);
-    Mat markers8u;
-    markers.convertTo(markers8u, CV_8U, 10);
 
     double t7_elapsed = ((double)getTickCount() - t7) / getTickFrequency();
     cout << "Time taken to create markers: " << t7_elapsed << " seconds." << endl;
 
-    // imshow("Markers", markers8u);
-    //! [seeds]
-
-    //! [watershed]
-    // Perform the watershed algorithm
+    // Perform the watershed algorithm on CPU
     double t8 = (double)getTickCount();
 
     watershed(imgResult, markers);
@@ -172,15 +168,14 @@ int main(int argc, char* argv[])
     double t8_elapsed = ((double)getTickCount() - t8) / getTickFrequency();
     cout << "Time taken for watershed: " << t8_elapsed << " seconds." << endl;
 
+    // Generate random colors and create the result image
+    double t9 = (double)getTickCount();
+
     Mat mark;
     markers.convertTo(mark, CV_8U);
     bitwise_not(mark, mark);
-    //    imshow("Markers_v2", mark); // uncomment this if you want to see how the mark
-    // image looks like at that point
 
     // Generate random colors
-    double t9 = (double)getTickCount();
-
     vector<Vec3b> colors;
     for (size_t i = 0; i < contours.size(); i++)
     {
@@ -210,13 +205,19 @@ int main(int argc, char* argv[])
     double t9_elapsed = ((double)getTickCount() - t9) / getTickFrequency();
     cout << "Time taken to generate result image: " << t9_elapsed << " seconds." << endl;
 
-    // Visualize the final image
-    // imshow("Final Result", dst);
-    //! [watershed]
-
     double total_elapsed = ((double)getTickCount() - total_start) / getTickFrequency();
     cout << "Total time taken: " << total_elapsed << " seconds." << endl;
 
-    waitKey();
+    // Uncomment the following lines to display images
+    // imshow("Source Image", src);
+    // imshow("Black Background Image", src_black_bg);
+    // imshow("New Sharpened Image", imgResult);
+    // imshow("Binary Image", bw);
+    // imshow("Distance Transform Image", dist);
+    // imshow("Peaks", dist);
+    // imshow("Markers", mark);
+    // imshow("Final Result", dst);
+
+    // waitKey();
     return 0;
 }

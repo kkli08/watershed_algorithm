@@ -217,6 +217,6 @@ int main(int argc, char* argv[])
     double total_elapsed = ((double)getTickCount() - total_start) / getTickFrequency();
     cout << "Total time taken: " << total_elapsed << " seconds." << endl;
 
-    waitKey();
+    // waitKey();
     return 0;
 }
