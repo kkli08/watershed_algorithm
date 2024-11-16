@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 3.10)
 # Set the project name and specify that CUDA is required
 project(OpenCVExample LANGUAGES CXX CUDA)
 
+set(CMAKE_CXX_STANDARD 14)
+
 # Find the OpenCV package with CUDA support
 set(OpenCV_DIR "/nfs/ug/homes-5/l/like23/ECE_1747/opencv/build")
 

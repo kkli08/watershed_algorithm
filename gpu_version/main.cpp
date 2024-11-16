@@ -12,6 +12,7 @@
 #include <opencv2/cudaimgproc.hpp>
 
 #include <iostream>
+#include <string>
 
 using namespace std;
 using namespace cv;
@@ -27,7 +28,8 @@ int main(int argc, char* argv[])
     double t1 = (double)getTickCount();
 
     CommandLineParser parser(argc, argv, "{@input | cards.png | input image}");
-    Mat src = imread(samples::findFile(parser.get<String>("@input")));
+    string inputImagePath = parser.get<string>("@input");
+    Mat src = imread(samples::findFile(inputImagePath));
     if (src.empty())
     {
         cout << "Could not open or find the image!\n" << endl;
@@ -204,6 +206,10 @@ int main(int argc, char* argv[])
             {
                 dst.at<Vec3b>(i, j) = colors[index - 1];
             }
+            else if (index == -1)
+            {
+                dst.at<Vec3b>(i, j) = Vec3b(255, 255, 255); // Mark watershed boundaries in white
+            }
         }
     }
 
@@ -212,6 +218,23 @@ int main(int argc, char* argv[])
 
     double total_elapsed = ((double)getTickCount() - total_start) / getTickFrequency();
     cout << "Total time taken: " << total_elapsed << " seconds." << endl;
+
+    // Save the final result image
+    // Extract the original image filename without extension
+    string filename = inputImagePath;
+    size_t lastSlash = filename.find_last_of("/\\");
+    if (lastSlash != string::npos)
+    {
+        filename = filename.substr(lastSlash + 1);
+    }
+    size_t lastDot = filename.find_last_of('.');
+    if (lastDot != string::npos)
+    {
+        filename = filename.substr(0, lastDot);
+    }
+    string outputFilename = "final_result_" + filename + ".png";
+    imwrite(outputFilename, dst);
+    cout << "Final result image saved as: " << outputFilename << endl;
 
     // Uncomment the following lines to display images
     // imshow("Source Image", src);
