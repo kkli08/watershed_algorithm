@@ -1,6 +1,8 @@
 # watershed_algorithm
 
 ### CPU
+CPU-version `cv::watershed` source code: [here](https://github.com/opencv/opencv/blob/ff639d11d4a1533078e84c3514c9bb0cfe98defe/modules/imgproc/src/segmentation.cpp#L88-L326)
+
 `cards_1.jpg`
 ```shell
 Time taken to load image: 0.00356564 seconds.
