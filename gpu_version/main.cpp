@@ -1,5 +1,6 @@
 /**
- * @brief Sample code showing how to segment overlapping objects using Laplacian filtering, with CUDA acceleration where possible
+ * @brief Sample code showing how to segment overlapping objects using Laplacian filtering,
+ * with CUDA acceleration where possible, including a CUDA implementation of the watershed algorithm.
  */
 
 #include <opencv2/core.hpp>
@@ -14,6 +15,9 @@
 
 using namespace std;
 using namespace cv;
+
+// Declare the cudaWatershed function
+void cudaWatershed(const Mat& image, Mat& markers);
 
 int main(int argc, char* argv[])
 {
@@ -60,7 +64,7 @@ int main(int argc, char* argv[])
     Mat kernel = (Mat_<float>(3, 3) <<
         1, 1, 1,
         1, -8, 1,
-        1, 1, 1); // an approximation of second derivative, a quite strong kernel
+        1, 1, 1); // An approximation of second derivative, a quite strong kernel
 
     // Convert d_src to BGRA (4 channels)
     cv::cuda::GpuMat d_src_rgba;
@@ -71,7 +75,8 @@ int main(int argc, char* argv[])
     d_src_rgba.convertTo(d_src_rgba_float, CV_32F);
 
     // Create filter
-    cv::Ptr<cv::cuda::Filter> filter = cv::cuda::createLinearFilter(d_src_rgba_float.type(), d_src_rgba_float.type(), kernel);
+    cv::Ptr<cv::cuda::Filter> filter = cv::cuda::createLinearFilter(
+        d_src_rgba_float.type(), d_src_rgba_float.type(), kernel);
 
     // Apply the filter
     cv::cuda::GpuMat d_imgLaplacian;
@@ -160,13 +165,13 @@ int main(int argc, char* argv[])
     double t7_elapsed = ((double)getTickCount() - t7) / getTickFrequency();
     cout << "Time taken to create markers: " << t7_elapsed << " seconds." << endl;
 
-    // Perform the watershed algorithm on CPU
+    // Perform the watershed algorithm using CUDA
     double t8 = (double)getTickCount();
 
-    watershed(imgResult, markers);
+    cudaWatershed(imgResult, markers);
 
     double t8_elapsed = ((double)getTickCount() - t8) / getTickFrequency();
-    cout << "Time taken for watershed: " << t8_elapsed << " seconds." << endl;
+    cout << "Time taken for CUDA watershed: " << t8_elapsed << " seconds." << endl;
 
     // Generate random colors and create the result image
     double t9 = (double)getTickCount();
@@ -210,11 +215,9 @@ int main(int argc, char* argv[])
 
     // Uncomment the following lines to display images
     // imshow("Source Image", src);
-    // imshow("Black Background Image", src_black_bg);
-    // imshow("New Sharpened Image", imgResult);
+    // imshow("Sharpened Image", imgResult);
     // imshow("Binary Image", bw);
     // imshow("Distance Transform Image", dist);
-    // imshow("Peaks", dist);
     // imshow("Markers", mark);
     // imshow("Final Result", dst);
 

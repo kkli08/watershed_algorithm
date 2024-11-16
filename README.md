@@ -19,16 +19,18 @@ Total time taken: 0.0257004 seconds.
 ### GPU
 `cards_1.jpg`
 ```shell
-Time taken to load image: 0.00217921 seconds.
-Time taken to change background: 0.000238478 seconds.
-Time taken to sharpen image: 0.00352492 seconds.
-Time taken to create binary image: 0.0345925 seconds.
-Time taken for distance transform: 0.000812833 seconds.
-Time taken to obtain peaks: 0.000149282 seconds.
-Time taken to create markers: 0.000611991 seconds.
-Time taken for watershed: 0.00601303 seconds.
-Time taken to generate result image: 0.00123459 seconds.
-Total time taken: 0.0494591 seconds.
+Time taken to load image: 0.0100761 seconds.
+Time taken to upload image to GPU: 0.252296 seconds.
+Time taken to change background: 0.0476375 seconds.
+Time taken to sharpen image: 0.0901306 seconds.
+Time taken to download image from GPU: 0.000141773 seconds.
+Time taken to create binary image: 0.0198654 seconds.
+Time taken for distance transform: 0.0109282 seconds.
+Time taken to obtain peaks: 0.0143061 seconds.
+Time taken to create markers: 0.000206545 seconds.
+Time taken for CUDA watershed: 0.116677 seconds.
+Time taken to generate result image: 0.00251092 seconds.
+Total time taken: 0.564951 seconds.
 ```
 
 ### Usage
