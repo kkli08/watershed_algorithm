@@ -5,19 +5,24 @@
 #include <opencv2/cudaimgproc.hpp>
 #include <opencv2/cudafilters.hpp>
 #include <cuda_runtime.h>
+#include <device_launch_parameters.h>
 
 #include <iostream>
 
-// Using the cv namespace
 using namespace cv;
 
-// CUDA kernel for the watershed algorithm
-__global__ void watershedKernel(
-    const float* grad, // Gradient magnitude image
-    int* labels,       // Marker labels
+// Constants for labels
+#define WATERSHED -1
+#define UNVISITED 0
+
+// CUDA kernel to perform flooding
+__global__ void floodingKernel(
+    const float* grad,    // Gradient magnitude image
+    const int* labels_in, // Input labels from previous iteration
+    int* labels_out,      // Output labels for current iteration
     int width,
     int height,
-    bool* changed)     // Flag to indicate if any label has changed
+    bool* changed)        // Flag to indicate if any label has changed
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -27,16 +32,30 @@ __global__ void watershedKernel(
 
     int idx = y * width + x;
 
-    if (labels[idx] <= 0) // Process only labeled pixels
+    int current_label = labels_in[idx];
+    float current_grad = grad[idx];
+
+    // If the pixel is already labeled (marker or watershed), copy the label
+    if (current_label > 0 || current_label == WATERSHED)
+    {
+        labels_out[idx] = current_label;
         return;
+    }
 
-    // Offsets for 4-connected neighbors
-    int dx[4] = { -1, 1, 0, 0 };
-    int dy[4] = { 0, 0, -1, 1 };
+    // Offsets for 8-connected neighbors
+    int dx[8] = { -1, 0, 1, 1, 1, 0, -1, -1 };
+    int dy[8] = { -1, -1, -1, 0, 1, 1, 1, 0 };
 
-    int current_label = labels[idx];
+    int neighbor_labels[8];
+    float neighbor_grads[8];
+    int num_neighbors = 0;
 
-    for (int i = 0; i < 4; ++i)
+    bool has_labeled_neighbor = false;
+    int neighbor_label = 0;
+    bool multiple_labels = false;
+
+    // Examine all neighbors
+    for (int i = 0; i < 8; ++i)
     {
         int nx = x + dx[i];
         int ny = y + dy[i];
@@ -45,20 +64,43 @@ __global__ void watershedKernel(
             continue;
 
         int nidx = ny * width + nx;
+        int n_label = labels_in[nidx];
+        float n_grad = grad[nidx];
 
-        int neighbor_label = labels[nidx];
-
-        if (neighbor_label == 0)
+        if (n_label > 0 || n_label == WATERSHED)
         {
-            // Assign label to neighbor
-            labels[nidx] = current_label;
+            if (!has_labeled_neighbor)
+            {
+                neighbor_label = n_label;
+                has_labeled_neighbor = true;
+            }
+            else
+            {
+                if (n_label != neighbor_label)
+                {
+                    multiple_labels = true;
+                }
+            }
+        }
+    }
+
+    if (has_labeled_neighbor)
+    {
+        if (multiple_labels)
+        {
+            labels_out[idx] = WATERSHED;
+        }
+        else
+        {
+            labels_out[idx] = neighbor_label;
+        }
+
+        if (labels_out[idx] != labels_in[idx])
             *changed = true;
-        }
-        else if (neighbor_label > 0 && neighbor_label != current_label)
-        {
-            // Conflict detected, mark as watershed
-            labels[idx] = -1; // WSHED
-        }
+    }
+    else
+    {
+        labels_out[idx] = labels_in[idx];
     }
 }
 
@@ -69,12 +111,10 @@ void cudaWatershed(const Mat& image, Mat& markers)
     Mat gray;
     cvtColor(image, gray, COLOR_BGR2GRAY);
 
-    // Upload images to GPU
-    cv::cuda::GpuMat d_gray, d_markers;
-    d_gray.upload(gray);
-    d_markers.upload(markers);
-
     // Compute gradient magnitude using Sobel operator in CUDA
+    cv::cuda::GpuMat d_gray;
+    d_gray.upload(gray);
+
     cv::cuda::GpuMat d_grad_x, d_grad_y;
     cv::Ptr<cv::cuda::Filter> sobel_x = cv::cuda::createSobelFilter(CV_8U, CV_32F, 1, 0, 3);
     cv::Ptr<cv::cuda::Filter> sobel_y = cv::cuda::createSobelFilter(CV_8U, CV_32F, 0, 1, 3);
@@ -86,47 +126,61 @@ void cudaWatershed(const Mat& image, Mat& markers)
     cv::cuda::GpuMat d_grad;
     cv::cuda::magnitude(d_grad_x, d_grad_y, d_grad);
 
-    // Normalize gradient
+    // Normalize gradient to range [0, 1]
     cv::cuda::GpuMat d_grad_norm;
-    cv::cuda::normalize(d_grad, d_grad_norm, 0.0, 1.0, NORM_MINMAX, -1, cv::noArray(), cv::cuda::Stream::Null());
+    cv::cuda::normalize(d_grad, d_grad_norm, 0.0, 1.0, NORM_MINMAX, -1);
 
-    // Perform the watershed algorithm on GPU
-    int width = d_grad_norm.cols;
-    int height = d_grad_norm.rows;
-    dim3 blockSize(16, 16);
-    dim3 gridSize((width + blockSize.x - 1) / blockSize.x,
-                  (height + blockSize.y - 1) / blockSize.y);
+    int width = image.cols;
+    int height = image.rows;
+    size_t size = width * height;
 
-    // Allocate memory for the flag indicating if changes have occurred
+    // Prepare labels
+    cv::cuda::GpuMat d_labels_in, d_labels_out;
+    d_labels_in.upload(markers);
+    d_labels_out.create(markers.size(), markers.type());
+
+    // Gradient data
+    cv::cuda::GpuMat d_grad_data;
+    d_grad_norm.convertTo(d_grad_data, CV_32F);
+
+    // Allocate device memory for 'changed' flag
     bool h_changed;
     bool* d_changed;
     cudaMalloc(&d_changed, sizeof(bool));
 
-    // Maximum number of iterations
-    int maxIterations = 1000;
+    dim3 blockSize(16, 16);
+    dim3 gridSize((width + blockSize.x - 1) / blockSize.x,
+                  (height + blockSize.y - 1) / blockSize.y);
 
-    // Iterative flooding process
+    int maxIterations = 10000;
+
     for (int iter = 0; iter < maxIterations; ++iter)
     {
         h_changed = false;
         cudaMemcpy(d_changed, &h_changed, sizeof(bool), cudaMemcpyHostToDevice);
 
         // Call the CUDA kernel
-        watershedKernel<<<gridSize, blockSize>>>(
-            d_grad_norm.ptr<float>(),
-            d_markers.ptr<int>(),
+        floodingKernel<<<gridSize, blockSize>>>(
+            d_grad_data.ptr<float>(),
+            d_labels_in.ptr<int>(),
+            d_labels_out.ptr<int>(),
             width,
             height,
             d_changed);
 
         cudaDeviceSynchronize();
 
+        // Swap labels_in and labels_out
+        d_labels_in.swap(d_labels_out);
+
         cudaMemcpy(&h_changed, d_changed, sizeof(bool), cudaMemcpyDeviceToHost);
+
         if (!h_changed)
             break;
     }
+
     cudaFree(d_changed);
 
     // Download the result back to CPU
-    d_markers.download(markers);
+    d_labels_in.download(markers);
 }

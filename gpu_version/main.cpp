@@ -1,6 +1,6 @@
 /**
  * @brief Sample code showing how to segment overlapping objects using Laplacian filtering,
- * with CUDA acceleration where possible, including a CUDA implementation of the watershed algorithm.
+ * with CUDA acceleration where possible, using the GPU version of the watershed algorithm.
  */
 
 #include <opencv2/core.hpp>
@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
 
     Mat bw;
     cvtColor(imgResult, bw, COLOR_BGR2GRAY);
-    threshold(bw, bw, 0, 255, THRESH_BINARY | THRESH_OTSU);
+    threshold(bw, bw, 40, 255, THRESH_BINARY | THRESH_OTSU);
 
     double t4_elapsed = ((double)getTickCount() - t4) / getTickFrequency();
     cout << "Time taken to create binary image: " << t4_elapsed << " seconds." << endl;
@@ -161,19 +161,29 @@ int main(int argc, char* argv[])
         drawContours(markers, contours, static_cast<int>(i), Scalar(static_cast<int>(i) + 1), -1);
     }
 
-    // Draw the background marker
-    circle(markers, Point(5, 5), 3, Scalar(255), -1);
+    // Ensure that unlabeled pixels are 0 and markers are positive integers
 
     double t7_elapsed = ((double)getTickCount() - t7) / getTickFrequency();
     cout << "Time taken to create markers: " << t7_elapsed << " seconds." << endl;
 
     // Perform the watershed algorithm using CUDA
+    // double t8 = (double)getTickCount();
+
+    // cudaWatershed(imgResult, markers);
+
+    // double t8_elapsed = ((double)getTickCount() - t8) / getTickFrequency();
+    // cout << "Time taken for CUDA watershed: " << t8_elapsed << " seconds." << endl;
+
+    // Uncomment the following lines to use the CPU version of watershed
+    
+    // Perform the watershed algorithm on CPU
     double t8 = (double)getTickCount();
 
-    cudaWatershed(imgResult, markers);
+    watershed(imgResult, markers);
 
     double t8_elapsed = ((double)getTickCount() - t8) / getTickFrequency();
-    cout << "Time taken for CUDA watershed: " << t8_elapsed << " seconds." << endl;
+    cout << "Time taken for watershed: " << t8_elapsed << " seconds." << endl;
+    
 
     // Generate random colors and create the result image
     double t9 = (double)getTickCount();
