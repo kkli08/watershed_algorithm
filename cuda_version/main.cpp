@@ -265,8 +265,8 @@ int main(int argc, char* argv[])
         cout << "Failed to save the final segmented image." << endl;
     }
 
-    double total_elapsed = ((double)getTickCount() - total_start) / getTickFrequency();
-    cout << "Total time taken: " << total_elapsed-t1_gpu_elapsed << " seconds." << endl;
+    double total_elapsed = ((double)getTickCount() - total_start) / getTickFrequency() - t1_gpu_elapsed;
+    cout << "Total time taken: " << total_elapsed << " seconds." << endl;
 
     // Optionally, display the final result
     // imshow("Final Result", dst);
