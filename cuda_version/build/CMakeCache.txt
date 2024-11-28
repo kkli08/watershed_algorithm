@@ -140,7 +140,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=CUDAWatershed
+CMAKE_PROJECT_NAME:STATIC=cuda_watershed
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=/usr/bin/ranlib
@@ -357,6 +357,15 @@ CUDA_nvToolsExt_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libnvToolsExt.so
 
 //Path to a library.
 CUDA_rt_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/librt.a
+
+//Value Computed by CMake
+cuda_watershed_BINARY_DIR:STATIC=/homes/l/like23/ECE_1747/project/watershed_algorithm/cuda_version/build
+
+//Value Computed by CMake
+cuda_watershed_IS_TOP_LEVEL:STATIC=ON
+
+//Value Computed by CMake
+cuda_watershed_SOURCE_DIR:STATIC=/homes/l/like23/ECE_1747/project/watershed_algorithm/cuda_version
 
 
 ########################

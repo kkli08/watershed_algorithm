@@ -1,4 +1,4 @@
-CMakeFiles/CUDAWatershed.dir/main.cpp.o: \
+CMakeFiles/cuda_watershed.dir/main.cpp.o: \
  /homes/l/like23/ECE_1747/project/watershed_algorithm/cuda_version/main.cpp \
  /usr/include/stdc-predef.h \
  /nfs/ug/homes-5/l/like23/ECE_1747/opencv/modules/core/include/opencv2/core.hpp \

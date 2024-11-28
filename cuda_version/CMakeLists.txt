@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Set the project name and specify that CUDA is required
-project(CUDAWatershed LANGUAGES CXX CUDA)
+project(cuda_watershed LANGUAGES CXX CUDA)
 
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 14)
@@ -21,10 +21,10 @@ find_package(CUDA REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS} ${CUDA_INCLUDE_DIRS})
 
 # Add the executable and specify the source files
-add_executable(CUDAWatershed main.cpp)
+add_executable(cuda_watershed main.cpp)
 
 # Link the OpenCV and CUDA libraries
-target_link_libraries(CUDAWatershed ${OpenCV_LIBS} ${CUDA_LIBRARIES})
+target_link_libraries(cuda_watershed ${OpenCV_LIBS} ${CUDA_LIBRARIES})
 
 # Enable CUDA for the project
 enable_language(CUDA)

@@ -63,7 +63,7 @@ CMAKE_BINARY_DIR = /homes/l/like23/ECE_1747/project/watershed_algorithm/cuda_ver
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: CMakeFiles/CUDAWatershed.dir/all
+all: CMakeFiles/cuda_watershed.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -71,34 +71,34 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
-clean: CMakeFiles/CUDAWatershed.dir/clean
+clean: CMakeFiles/cuda_watershed.dir/clean
 .PHONY : clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/CUDAWatershed.dir
+# Target rules for target CMakeFiles/cuda_watershed.dir
 
 # All Build rule for target.
-CMakeFiles/CUDAWatershed.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/CUDAWatershed.dir/build.make CMakeFiles/CUDAWatershed.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/CUDAWatershed.dir/build.make CMakeFiles/CUDAWatershed.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/homes/l/like23/ECE_1747/project/watershed_algorithm/cuda_version/build/CMakeFiles --progress-num=1,2 "Built target CUDAWatershed"
-.PHONY : CMakeFiles/CUDAWatershed.dir/all
+CMakeFiles/cuda_watershed.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cuda_watershed.dir/build.make CMakeFiles/cuda_watershed.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cuda_watershed.dir/build.make CMakeFiles/cuda_watershed.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/homes/l/like23/ECE_1747/project/watershed_algorithm/cuda_version/build/CMakeFiles --progress-num=1,2 "Built target cuda_watershed"
+.PHONY : CMakeFiles/cuda_watershed.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/CUDAWatershed.dir/rule: cmake_check_build_system
+CMakeFiles/cuda_watershed.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /homes/l/like23/ECE_1747/project/watershed_algorithm/cuda_version/build/CMakeFiles 2
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/CUDAWatershed.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/cuda_watershed.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /homes/l/like23/ECE_1747/project/watershed_algorithm/cuda_version/build/CMakeFiles 0
-.PHONY : CMakeFiles/CUDAWatershed.dir/rule
+.PHONY : CMakeFiles/cuda_watershed.dir/rule
 
 # Convenience name for target.
-CUDAWatershed: CMakeFiles/CUDAWatershed.dir/rule
-.PHONY : CUDAWatershed
+cuda_watershed: CMakeFiles/cuda_watershed.dir/rule
+.PHONY : cuda_watershed
 
 # clean rule for target.
-CMakeFiles/CUDAWatershed.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/CUDAWatershed.dir/build.make CMakeFiles/CUDAWatershed.dir/clean
-.PHONY : CMakeFiles/CUDAWatershed.dir/clean
+CMakeFiles/cuda_watershed.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/cuda_watershed.dir/build.make CMakeFiles/cuda_watershed.dir/clean
+.PHONY : CMakeFiles/cuda_watershed.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.
